@@ -11,7 +11,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%237c6aef'/%3E%3Cstop offset='100%25' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='46' fill='url(%23g)'/%3E%3Cpath d='M40 28v36a12 12 0 1 1-6-10.4V34l28-7v33a12 12 0 1 1-6-10.4V28L40 28z' fill='white'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -47,9 +47,64 @@
       </div>
     </header>
 
-    <main>
-      <!-- Hero -->
-      <section class="hero">
+    <div class="workspace-layout">
+      <aside class="sidebar">
+        <a class="sidebar-brand" href="#listen" aria-label="SyncTune home">
+          <span class="sidebar-brand-mark" aria-hidden="true">S</span>
+          <span class="sidebar-brand-name">SyncTune<span>.</span></span>
+        </a>
+        <p class="sidebar-label">YOUR LISTENING SPACE</p>
+        <nav class="sidebar-nav" aria-label="Main navigation">
+          <a class="sidebar-link" href="#listen" aria-current="location">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 11.5L12 5L20 11.5V19H14.8V14.5H9.2V19H4V11.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+            <span>Listen</span>
+          </a>
+          <a class="sidebar-link" href="#featuresSection">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.25" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M12 2V5M22 12H19M12 22V19M2 12H5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            <span>Overview</span>
+          </a>
+          <a class="sidebar-link" href="#workflow">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.75" y="4.75" width="6.5" height="5.5" rx="1.5" stroke="currentColor" stroke-width="1.7"/><rect x="13.75" y="13.75" width="6.5" height="5.5" rx="1.5" stroke="currentColor" stroke-width="1.7"/><path d="M10.5 7.5H14C15.1 7.5 16 8.4 16 9.5V13.5M13.5 16.5H10C8.9 16.5 8 15.6 8 14.5V10.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            <span>How it works</span>
+          </a>
+          <a class="sidebar-link" href="#playerCard">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.75" y="5.25" width="16.5" height="13.5" rx="2.5" stroke="currentColor" stroke-width="1.7"/><path d="M10 9L15 12L10 15V9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+            <span>Player</span>
+          </a>
+          <a class="sidebar-link" href="#queueCard">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 6.5H19M5 12H15M5 17.5H12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="18" cy="17.5" r="2" stroke="currentColor" stroke-width="1.7"/></svg>
+            <span>Queue</span>
+          </a>
+          <a class="sidebar-link" href="#chatCard">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 5.75H19C20.1 5.75 21 6.65 21 7.75V15C21 16.1 20.1 17 19 17H10L5 20V17H5C3.9 17 3 16.1 3 15V7.75C3 6.65 3.9 5.75 5 5.75Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M7.5 10H16.5M7.5 13.5H13.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            <span>Room chat</span>
+          </a>
+        </nav>
+        <section class="sidebar-meta" aria-label="Welcome and room time">
+          <div class="sidebar-personal">
+            <span class="sidebar-meta-label">WELCOME BACK</span>
+            <strong id="sidebarUsername">Friend</strong>
+          </div>
+          <div class="sidebar-clock">
+            <span class="sidebar-meta-label">LOCAL TIME</span>
+            <time id="sidebarTime" class="sidebar-time" aria-live="off">--:--:--</time>
+            <span id="sidebarDate" class="sidebar-date">Loading date</span>
+          </div>
+          <div class="sidebar-duration">
+            <span class="sidebar-meta-label">ROOM OPEN FOR</span>
+            <span id="roomDuration" class="room-duration" aria-live="off">Starting…</span>
+          </div>
+        </section>
+        <div class="sidebar-footer">
+          <span class="sidebar-live"><span></span> PRIVATE ROOM</span>
+          <p>Good music is better shared.</p>
+        </div>
+      </aside>
+
+      <main>
+        <h1 class="sr-only">SyncTune private listening room</h1>
+        <!-- Hero -->
+        <section id="listen" class="hero">
         <div class="live-pill">● LIVE ROOM</div>
         <p class="welcome">WELCOME BACK, <span id="welcomeName">FRIEND</span></p>
         <div id="dotCanvasWrap" class="dot-canvas-wrap">
@@ -61,10 +116,202 @@
           <button type="submit">Play now</button>
         </form>
         <p id="songError" class="error"></p>
-      </section>
+        </section>
 
-      <!-- Player -->
-      <section class="player-card">
+        <!-- Networking Features -->
+        <section id="featuresSection" class="features-section" aria-labelledby="featuresTitle">
+        <div class="features-hero">
+          <div class="features-intro">
+            <span class="features-eyebrow">A REAL-TIME NETWORKING PROJECT</span>
+            <h2 id="featuresTitle">One room.<br>Every listener <span class="handwritten">in sync.</span></h2>
+            <p class="muted">A private listening space where live events carry the music, the conversation, and the room state to everyone connected.</p>
+            <a class="features-cta" href="#songForm">Explore the listening room <span aria-hidden="true">↓</span></a>
+          </div>
+          <div class="features-art" role="img" aria-label="Illustration of listeners connected to a room server sharing music and messages">
+            <svg class="features-illustration" viewBox="0 0 560 320" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <defs>
+                <linearGradient id="signalGradient" x1="98" y1="160" x2="461" y2="160" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#8B7BFA" stop-opacity=".18"/>
+                  <stop offset=".5" stop-color="#A78BFA"/>
+                  <stop offset="1" stop-color="#45D6B0" stop-opacity=".3"/>
+                </linearGradient>
+                <linearGradient id="serverGradient" x1="209" y1="112" x2="351" y2="234" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#30295A"/>
+                  <stop offset="1" stop-color="#17152D"/>
+                </linearGradient>
+                <filter id="serverGlow" x="166" y="70" width="228" height="216" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+                  <feGaussianBlur stdDeviation="20"/>
+                </filter>
+              </defs>
+              <path d="M105 163C156 163 154 108 206 108M105 163C156 163 154 218 206 218M355 108C407 108 404 163 455 163M355 218C407 218 404 163 455 163" stroke="url(#signalGradient)" stroke-width="2" stroke-dasharray="5 7"/>
+              <circle cx="280" cy="163" r="72" fill="#806DF2" fill-opacity=".15" filter="url(#serverGlow)"/>
+              <rect x="207" y="104" width="146" height="118" rx="22" fill="url(#serverGradient)" stroke="#A78BFA" stroke-opacity=".48"/>
+              <rect x="221" y="119" width="118" height="86" rx="14" fill="#0C0C16" fill-opacity=".72"/>
+              <circle cx="240" cy="139" r="3" fill="#4DE1B1"/>
+              <circle cx="251" cy="139" r="3" fill="#A78BFA"/>
+              <path d="M237 162H248L255 147L266 180L278 155L287 169L296 151L305 163H323" stroke="#A997FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M240 190H320" stroke="white" stroke-opacity=".14" stroke-linecap="round"/>
+              <circle cx="89" cy="163" r="31" fill="#171526" stroke="#A78BFA" stroke-opacity=".55"/>
+              <circle cx="89" cy="155" r="7" fill="#C9C0FF"/>
+              <path d="M75 179C77 169 83 166 89 166C95 166 101 169 103 179" stroke="#A78BFA" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="471" cy="163" r="31" fill="#14221F" stroke="#4DE1B1" stroke-opacity=".65"/>
+              <circle cx="471" cy="155" r="7" fill="#A7F3D7"/>
+              <path d="M457 179C459 169 465 166 471 166C477 166 483 169 485 179" stroke="#4DE1B1" stroke-width="3" stroke-linecap="round"/>
+              <rect x="24" y="230" width="132" height="35" rx="17.5" fill="#14131F" stroke="white" stroke-opacity=".09"/>
+              <circle cx="42" cy="247.5" r="4" fill="#4DE1B1"/>
+              <text x="53" y="251" fill="#C8C5D6" font-family="Inter, sans-serif" font-size="10">LISTENER CONNECTED</text>
+              <rect x="389" y="65" width="147" height="35" rx="17.5" fill="#14131F" stroke="white" stroke-opacity=".09"/>
+              <path d="M407 78H415C417.2 78 419 79.8 419 82V85C419 87.2 417.2 89 415 89H412L408 92V89H407C404.8 89 403 87.2 403 85V82C403 79.8 404.8 78 407 78Z" stroke="#A78BFA" stroke-width="1.5" stroke-linejoin="round"/>
+              <text x="426" y="87" fill="#C8C5D6" font-family="Inter, sans-serif" font-size="10">CHAT + MUSIC EVENTS</text>
+              <circle cx="178" cy="108" r="4" fill="#A78BFA"/>
+              <circle cx="382" cy="218" r="4" fill="#4DE1B1"/>
+            </svg>
+            <div class="art-caption"><span class="art-caption-dot"></span> One room state, shared live</div>
+          </div>
+        </div>
+
+        <div class="network-overview">
+          <div class="subsection-heading">
+            <div>
+              <span class="features-eyebrow">UNDER THE HOOD</span>
+              <h2>A small room, connected in real time.</h2>
+            </div>
+            <p class="muted">Authenticated clients send room events to the server. The server broadcasts shared state; SQLite keeps chat history.</p>
+          </div>
+          <div class="network-flow" aria-label="Listeners connect to the SyncTune room server over Socket.IO, which broadcasts shared room events">
+            <div class="network-node">
+              <span class="network-node-index">01 / CLIENTS</span>
+              <strong>Listeners</strong>
+              <span>Authenticated browsers</span>
+            </div>
+            <div class="network-link"><span>Socket.IO · WebSocket</span></div>
+            <div class="network-node network-node-server">
+              <span class="network-node-index">02 / SERVER</span>
+              <strong>Room server</strong>
+              <span>Playback + queue state</span>
+            </div>
+            <div class="network-link"><span>Chat history</span></div>
+            <div class="network-node network-node-storage">
+              <span class="network-node-index">03 / STORAGE</span>
+              <strong>SQLite</strong>
+              <span>Accounts + messages</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="workflow" class="workflow-section">
+          <div class="subsection-heading workflow-heading">
+            <div>
+              <span class="features-eyebrow">FROM HELLO TO PLAY</span>
+              <h2>How a listening session flows.</h2>
+            </div>
+            <p class="muted">A simple path from signing in to finding your shared rhythm.</p>
+          </div>
+          <div class="workflow-grid">
+            <article class="workflow-card">
+              <div class="workflow-visual workflow-visual-connect" aria-hidden="true">
+                <svg viewBox="0 0 64 64" fill="none">
+                  <rect x="12" y="10" width="40" height="44" rx="9" stroke="currentColor" stroke-width="2"/>
+                  <circle cx="32" cy="25" r="6" stroke="currentColor" stroke-width="2"/>
+                  <path d="M21 43C22.5 36 27 34 32 34C37 34 41.5 36 43 43" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M46 14L52 20L59 11" stroke="#4DE1B1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="workflow-visual-label">PRIVATE ROOM</span>
+              </div>
+              <span class="workflow-step">STEP 01</span>
+              <h3>Sign in together</h3>
+              <p>Friends join with their accounts and connect to the same private room.</p>
+            </article>
+            <article class="workflow-card">
+              <div class="workflow-visual workflow-visual-play" aria-hidden="true">
+                <svg viewBox="0 0 64 64" fill="none">
+                  <rect x="10" y="12" width="44" height="40" rx="10" stroke="currentColor" stroke-width="2"/>
+                  <path d="M28 23L42 32L28 41V23Z" fill="currentColor"/>
+                  <path d="M17 47H47" stroke="currentColor" stroke-opacity=".35" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M19 17H25" stroke="#A78BFA" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span class="workflow-visual-label">SHARED PLAYBACK</span>
+              </div>
+              <span class="workflow-step">STEP 02</span>
+              <h3>Pick the next track</h3>
+              <p>Play a YouTube link now or add it to the queue for everyone to enjoy.</p>
+            </article>
+            <article class="workflow-card">
+              <div class="workflow-visual workflow-visual-sync" aria-hidden="true">
+                <svg viewBox="0 0 64 64" fill="none">
+                  <path d="M8 32H15L20 20L28 44L35 24L40 37L45 28L49 32H56" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="12" cy="32" r="3" fill="#A78BFA"/>
+                  <circle cx="52" cy="32" r="3" fill="#4DE1B1"/>
+                </svg>
+                <span class="workflow-visual-label">LIVE ROOM EVENTS</span>
+              </div>
+              <span class="workflow-step">STEP 03</span>
+              <h3>Stay on the same beat</h3>
+              <p>Playback changes are broadcast to connected listeners; reconnecting clients request the latest state.</p>
+            </article>
+            <article class="workflow-card">
+              <div class="workflow-visual workflow-visual-chat" aria-hidden="true">
+                <svg viewBox="0 0 64 64" fill="none">
+                  <path d="M12 15C12 11.7 14.7 9 18 9H46C49.3 9 52 11.7 52 15V36C52 39.3 49.3 42 46 42H29L18 51V42C14.7 42 12 39.3 12 36V15Z" stroke="currentColor" stroke-width="2"/>
+                  <path d="M21 22H43M21 30H37" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <circle cx="46" cy="47" r="9" fill="#17152D" stroke="#A78BFA" stroke-width="2"/>
+                  <path d="M46 42V47L49 49" stroke="#A78BFA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="workflow-visual-label">CHAT + HISTORY</span>
+              </div>
+              <span class="workflow-step">STEP 04</span>
+              <h3>Make it a hangout</h3>
+              <p>Chat while you listen. Messages are saved and shared with listeners as they connect.</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="features-grid">
+          <article class="feature-card">
+            <span class="feature-index">01</span>
+            <h3>One shared timeline</h3>
+            <p>Play, pause, seek, and track changes update the room state for connected listeners.</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-index">02</span>
+            <h3>Collaborative queue</h3>
+            <p>Anyone in the room can add a track; the server advances to the next queued song.</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-index">03</span>
+            <h3>Live room presence</h3>
+            <p>A live connection count shows how many listeners are in the room right now.</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-index">04</span>
+            <h3>Reconnect and recover</h3>
+            <p>Reconnecting clients request an updated room snapshot to catch up with playback.</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-index">05</span>
+            <h3>Persistent conversations</h3>
+            <p>Chat messages are stored in SQLite and history is sent when listeners connect.</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-index">06</span>
+            <h3>Managed friend accounts</h3>
+            <p>An administrator can create and manage the accounts used to enter the private room.</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-index">07</span>
+            <h3>Listener-aware room timer</h3>
+            <p>The session clock starts with the first non-admin listener and resets when the last one leaves.</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-index">08</span>
+            <h3>Admin database reports</h3>
+            <p>Administrators can download SQLite account metadata and chat history as CSV or PDF. Passwords and hashes are excluded.</p>
+          </article>
+        </div>
+        </section>
+
+        <!-- Player -->
+        <section id="playerCard" class="player-card">
         <div id="player"></div>
         <div id="emptyPlayer" class="empty-player">Add a YouTube song to start the room.</div>
         <div class="controls">
@@ -72,12 +319,14 @@
           <button id="pauseBtn"><span class="ctrl-icon">⏸</span> Pause</button>
           <button id="nextBtn"><span class="ctrl-icon">⏭</span> Next</button>
           <button id="syncBtn"><span class="ctrl-icon">⟳</span> Sync</button>
+          <button id="audioFocusBtn" class="audio-focus-toggle" type="button" aria-label="Toggle compact audio focus layout" aria-pressed="false" title="The YouTube video remains visible in audio focus"><span class="ctrl-icon">♫</span> Audio focus</button>
         </div>
+        <p id="audioFocusNote" class="audio-focus-note" hidden>Compact player view · YouTube video remains visible.</p>
         <div id="status" class="status">Waiting for a song...</div>
-      </section>
+        </section>
 
-      <!-- Queue -->
-      <section class="queue-card">
+        <!-- Queue -->
+        <section id="queueCard" class="queue-card">
         <div class="section-heading">
           <div>
             <h2>Shared queue</h2>
@@ -91,10 +340,10 @@
         </form>
         <p id="queueError" class="error"></p>
         <div id="queueList" class="queue-list"><div class="queue-empty">Queue is empty</div></div>
-      </section>
+        </section>
 
-      <!-- Chat -->
-      <section class="chat-card">
+        <!-- Chat -->
+        <section id="chatCard" class="chat-card">
         <div class="section-heading">
           <div>
             <h2>Room chat</h2>
@@ -109,10 +358,10 @@
           <button id="chatSendBtn" type="submit">Send</button>
         </form>
         <p id="chatError" class="error chat-error" aria-live="polite"></p>
-      </section>
+        </section>
 
-      <!-- Admin -->
-      <section id="adminCard" class="admin-card hidden">
+        <!-- Admin -->
+        <section id="adminCard" class="admin-card hidden">
         <div class="section-heading">
           <div>
             <div class="dashboard-label">ADMIN DASHBOARD</div>
@@ -125,6 +374,17 @@
           <div class="stat-card"><span>Total accounts</span><strong id="totalUsers">0</strong></div>
           <div class="stat-card"><span>Friend accounts</span><strong id="friendUsers">0</strong></div>
         </div>
+        <div class="admin-export">
+          <div>
+            <div class="admin-create-title">Database exports</div>
+            <p class="muted">Download account and chat records from SQLite. Passwords and password hashes are never included.</p>
+          </div>
+          <div class="export-actions">
+            <button id="exportCsvBtn" class="small-btn" type="button">Download CSV</button>
+            <button id="exportPdfBtn" class="small-btn" type="button">Download PDF</button>
+          </div>
+          <p id="exportMessage" class="admin-message export-message" role="status" aria-live="polite"></p>
+        </div>
         <div class="admin-create">
           <div class="admin-create-title">Create new account</div>
           <form id="adminForm" class="admin-form">
@@ -136,17 +396,18 @@
         <p id="adminMessage" class="admin-message"></p>
         <div class="users-heading"><span>Created accounts</span><span>Actions</span></div>
         <div id="userList" class="user-list"><div class="queue-empty">Loading accounts...</div></div>
-      </section>
+        </section>
 
-      <!-- Footer -->
-      <footer>
+        <!-- Footer -->
+        <footer>
         <div class="footer-content">
           <span>Built with precision by <strong>Rupayan</strong></span>
           <span class="footer-dot">·</span>
           <span class="footer-brand">Sync<span>Tune</span></span>
         </div>
-      </footer>
-    </main>
+        </footer>
+      </main>
+    </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>

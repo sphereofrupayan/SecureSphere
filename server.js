@@ -6,6 +6,7 @@ const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
+const PDFDocument = require("pdfkit");
 const Database = require("better-sqlite3");
 const { Server } = require("socket.io");
 const PORT = Number(process.env.PORT || 10000);
@@ -31,27 +32,126 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 let roomState = { videoId: "", playing: false, position: 0, updatedAt: Date.now(), changedBy: "System" };
 let queue = [];
+let roomOpenedAt = null;
 const getChatHistory = db.prepare("SELECT id, username, message, created_at AS createdAt FROM chat_messages ORDER BY created_at ASC LIMIT 200");
 const saveChatMessage = db.prepare("INSERT INTO chat_messages (id, username, message, created_at) VALUES (?, ?, ?, ?)");
+const getExportUsers = db.prepare("SELECT id, username, is_admin, created_at FROM users ORDER BY id ASC");
+const getExportChatMessages = db.prepare("SELECT id, username, message, created_at FROM chat_messages ORDER BY created_at ASC, id ASC");
 function signUser(user) { return jwt.sign({ id: user.id, username: user.username, isAdmin: Boolean(user.is_admin) }, JWT_SECRET, { expiresIn: "7d" }); }
 function getUserFromToken(token) { try { return jwt.verify(token, JWT_SECRET); } catch { return null; } }
 function authFromRequest(req) { const header = req.headers.authorization || ""; const token = header.startsWith("Bearer ") ? header.slice(7) : req.cookies.synctune_token; return token ? getUserFromToken(token) : null; }
 function requireAdmin(req,res,next) { const user=authFromRequest(req); if(!user || !user.isAdmin) return res.status(403).json({error:"Admin access required"}); req.user=user; next(); }
+function csvCell(value) { let text=String(value ?? ""); if(/^\s*[=+\-@]/.test(text)) text=`'${text}`; return `"${text.replace(/"/g,'""')}"`; }
+function exportRecords() {
+  return {
+    users: getExportUsers.all().map(user => ({
+      id: user.id,
+      username: user.username,
+      role: user.is_admin ? "Administrator" : "Member",
+      created_at: user.created_at
+    })),
+    messages: getExportChatMessages.all().map(message => ({
+      id: message.id,
+      username: message.username,
+      message: message.message,
+      created_at: new Date(message.created_at).toISOString()
+    }))
+  };
+}
+function pdfText(value) { return String(value ?? "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x20-\x7e]/g, "?"); }
+function addPdfHeading(doc, title) {
+  doc.font("Helvetica-Bold").fontSize(18).text("SyncTune database export");
+  doc.moveDown(0.25).font("Helvetica").fontSize(9).fillColor("#666666").text(`Generated ${new Date().toISOString()} - ${title}`);
+  doc.moveDown(1).fillColor("#111111");
+}
+function ensurePdfSpace(doc, height) {
+  if (doc.y + height > doc.page.height - doc.page.margins.bottom) {
+    doc.addPage();
+    addPdfHeading(doc, "continued");
+  }
+}
 function extractYouTubeId(input) { try { const url=new URL(input.trim()); if(url.hostname==="youtu.be") return url.pathname.slice(1).split("/")[0]; if(url.hostname.includes("youtube.com")){ if(url.pathname==="/watch") return url.searchParams.get("v"); if(url.pathname.startsWith("/shorts/")) return url.pathname.split("/")[2]; if(url.pathname.startsWith("/embed/")) return url.pathname.split("/")[2]; } } catch {} return null; }
 function currentPosition() { return roomState.playing ? roomState.position + (Date.now()-roomState.updatedAt)/1000 : roomState.position; }
 function publicState() { return { roomName:ROOM_NAME, videoId:roomState.videoId, playing:roomState.playing, position:Math.max(0,currentPosition()), changedBy:roomState.changedBy, serverTime:Date.now(), queue }; }
 function emitState() { io.to("main").emit("state",publicState()); }
 function startNext() { const next=queue.shift(); if(!next){ roomState={videoId:"",playing:false,position:0,updatedAt:Date.now(),changedBy:"System"}; emitState(); return; } roomState={videoId:next.videoId,playing:true,position:0,updatedAt:Date.now(),changedBy:next.addedBy}; emitState(); }
-app.get("/api/config",(req,res)=>res.json({roomName:ROOM_NAME}));
+app.get("/api/config",(req,res)=>res.json({roomName:ROOM_NAME,roomOpenedAt}));
 app.post("/api/login",(req,res)=>{ const username=String(req.body.username||"").trim(); const password=String(req.body.password||""); const user=db.prepare("SELECT * FROM users WHERE username=?").get(username); if(!user||!bcrypt.compareSync(password,user.password_hash)) return res.status(401).json({error:"Invalid username or password"}); res.json({token:signUser(user),username:user.username,isAdmin:Boolean(user.is_admin)}); });
 app.post("/api/admin/users",requireAdmin,(req,res)=>{ const username=String(req.body.username||"").trim(); const password=String(req.body.password||""); if(!/^[a-zA-Z0-9_.-]{3,30}$/.test(username)) return res.status(400).json({error:"Username must be 3-30 characters and use letters, numbers, _, ., or -"}); if(password.length<6) return res.status(400).json({error:"Password must be at least 6 characters"}); try { db.prepare("INSERT INTO users (username,password_hash,is_admin) VALUES (?,?,0)").run(username,bcrypt.hashSync(password,12)); res.json({message:`User ${username} created`}); } catch { res.status(409).json({error:"Username already exists"}); } });
 app.get("/api/admin/users",requireAdmin,(req,res)=>{ const users=db.prepare("SELECT id,username,is_admin,created_at FROM users ORDER BY id ASC").all(); res.json({users}); });
 app.delete("/api/admin/users/:id",requireAdmin,(req,res)=>{ const id=Number(req.params.id); const user=db.prepare("SELECT id,username,is_admin FROM users WHERE id=?").get(id); if(!user)return res.status(404).json({error:"User not found"}); if(user.is_admin)return res.status(400).json({error:"Admin account cannot be deleted"}); db.prepare("DELETE FROM users WHERE id=?").run(id); res.json({message:`User ${user.username} deleted`}); });
 app.put("/api/admin/users/:id/password",requireAdmin,(req,res)=>{ const id=Number(req.params.id); const password=String(req.body.password||""); if(password.length<6)return res.status(400).json({error:"Password must be at least 6 characters"}); const user=db.prepare("SELECT username FROM users WHERE id=?").get(id); if(!user)return res.status(404).json({error:"User not found"}); db.prepare("UPDATE users SET password_hash=? WHERE id=?").run(bcrypt.hashSync(password,12),id); res.json({message:`Password updated for ${user.username}`}); });
+app.get("/api/admin/exports/database.csv",requireAdmin,(req,res)=>{
+  try {
+    const { users, messages } = exportRecords();
+    const rows = [
+      ["Accounts"],
+      ["ID", "Username", "Role", "Created at"],
+      ...users.map(user => [user.id, user.username, user.role, user.created_at]),
+      [],
+      ["Chat messages"],
+      ["ID", "Username", "Message", "Created at"],
+      ...messages.map(message => [message.id, message.username, message.message, message.created_at])
+    ];
+    const csv = `\uFEFF${rows.map(row => row.map(csvCell).join(",")).join("\r\n")}`;
+    res.set({ "Cache-Control": "no-store", "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": 'attachment; filename="synctune-database-export.csv"' });
+    res.send(csv);
+  } catch (error) {
+    console.error("Unable to create database CSV export", error);
+    res.status(500).json({ error: "Unable to create database export" });
+  }
+});
+app.get("/api/admin/exports/database.pdf",requireAdmin,(req,res)=>{
+  let doc;
+  try {
+    const { users, messages } = exportRecords();
+    res.set({ "Cache-Control": "no-store", "Content-Type": "application/pdf", "Content-Disposition": 'attachment; filename="synctune-database-export.pdf"' });
+    doc = new PDFDocument({ margin: 48 });
+    doc.on("error", error => {
+      console.error("Unable to stream database PDF export", error);
+      if (!res.headersSent) res.status(500).json({ error: "Unable to create database export" });
+      else res.destroy(error);
+    });
+    doc.pipe(res);
+    addPdfHeading(doc, "accounts and chat messages");
+    doc.font("Helvetica").fontSize(10).text(`Accounts: ${users.length}   |   Chat messages: ${messages.length}`);
+    doc.moveDown();
+    doc.font("Helvetica-Bold").fontSize(13).text("Accounts");
+    doc.moveDown(0.4);
+    for (const user of users) {
+      const line = `#${user.id}  ${user.username}  |  ${user.role}  |  Created: ${user.created_at}`;
+      const safeLine = pdfText(line);
+      const width = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+      ensurePdfSpace(doc, doc.heightOfString(safeLine, { width }) + 8);
+      doc.font("Helvetica").fontSize(9).text(safeLine);
+      doc.moveDown(0.3);
+    }
+    doc.moveDown();
+    ensurePdfSpace(doc, 32);
+    doc.font("Helvetica-Bold").fontSize(13).text("Chat messages");
+    doc.moveDown(0.4);
+    for (const message of messages) {
+      const heading = pdfText(`#${message.id}  ${message.username}  |  ${message.created_at}`);
+      const safeMessage = pdfText(message.message);
+      const width = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+      const blockHeight = doc.heightOfString(heading, { width }) + doc.heightOfString(safeMessage, { width }) + 12;
+      ensurePdfSpace(doc, blockHeight);
+      doc.font("Helvetica-Bold").fontSize(8).text(heading);
+      doc.font("Helvetica").fontSize(9).text(safeMessage);
+      doc.moveDown(0.6);
+    }
+    doc.end();
+  } catch (error) {
+    console.error("Unable to create database PDF export", error);
+    if (doc && !res.headersSent) doc.end();
+    if (!res.headersSent) res.status(500).json({ error: "Unable to create database export" });
+    else res.destroy(error);
+  }
+});
 app.get("/api/me",(req,res)=>{ const user=authFromRequest(req); if(!user)return res.status(401).json({error:"Not logged in"}); res.json({username:user.username,isAdmin:Boolean(user.isAdmin)}); });
 app.get("/api/state",(req,res)=>{if(!authFromRequest(req))return res.status(401).json({error:"Not logged in"});res.json(publicState());});
 io.use((socket,next)=>{const user=getUserFromToken(socket.handshake.auth?.token);if(!user)return next(new Error("Unauthorized"));socket.user=user;next();});
-io.on("connection",socket=>{socket.join("main");socket.emit("state",publicState());socket.emit("chatHistory",getChatHistory.all());io.to("main").emit("presence",{count:io.sockets.adapter.rooms.get("main")?.size||0});
+io.on("connection",socket=>{socket.join("main");if(!socket.user.isAdmin){socket.join("listeners");if(io.sockets.adapter.rooms.get("listeners")?.size===1)roomOpenedAt=Date.now();}socket.emit("state",publicState());socket.emit("chatHistory",getChatHistory.all());io.to("main").emit("presence",{count:io.sockets.adapter.rooms.get("main")?.size||0});io.to("main").emit("roomStatus",{roomOpenedAt});
  socket.on("setSong",input=>{const id=extractYouTubeId(String(input||""));if(!id)return socket.emit("errorMessage","Please enter a valid YouTube URL.");roomState={videoId:id,playing:true,position:0,updatedAt:Date.now(),changedBy:socket.user.username};emitState();});
  socket.on("addToQueue",input=>{const id=extractYouTubeId(String(input||""));if(!id)return socket.emit("errorMessage","Please enter a valid YouTube URL.");queue.push({videoId:id,addedBy:socket.user.username,id:crypto.randomUUID()});emitState();});
  socket.on("removeFromQueue",id=>{queue=queue.filter(item=>item.id!==id);emitState();});
@@ -62,7 +162,7 @@ io.on("connection",socket=>{socket.join("main");socket.emit("state",publicState(
  socket.on("ended",()=>{if(roomState.videoId)startNext();});
  socket.on("sendMessage",(input,ack)=>{const message=String(input||"").trim().slice(0,500);if(!message){ack?.({ok:false,error:"Write a message before sending."});return;}const chatMessage={id:crypto.randomUUID(),username:socket.user.username,message,createdAt:Date.now()};try{saveChatMessage.run(chatMessage.id,chatMessage.username,chatMessage.message,chatMessage.createdAt);io.to("main").emit("chatMessage",chatMessage);ack?.({ok:true});}catch(error){console.error("Unable to save chat message",error);ack?.({ok:false,error:"Your message could not be saved. Please try again."});}});
  socket.on("requestSync",()=>socket.emit("state",publicState()));
- socket.on("disconnect",()=>io.to("main").emit("presence",{count:io.sockets.adapter.rooms.get("main")?.size||0}));
+ socket.on("disconnect",()=>{io.to("main").emit("presence",{count:io.sockets.adapter.rooms.get("main")?.size||0});if(!socket.user.isAdmin&&(io.sockets.adapter.rooms.get("listeners")?.size||0)===0){roomOpenedAt=null;io.to("main").emit("roomStatus",{roomOpenedAt});}});
 });
 app.get("/{*splat}",(req,res)=>res.sendFile(path.join(__dirname,"public","index.html")));
 server.listen(PORT,"0.0.0.0",()=>console.log(`SyncTune running on port ${PORT}`));

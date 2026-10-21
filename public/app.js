@@ -6,9 +6,17 @@ let suppressEvents=false;
 let lastVideoId="";
 let remoteControlUntil=0;
 let lastSyncAt=0;
+let sidebarClockInterval=null;
 const $=id=>document.getElementById(id);
+function formatRoomDuration(milliseconds){const totalSeconds=Math.max(0,Math.floor(milliseconds/1000));const days=Math.floor(totalSeconds/86400);const hours=Math.floor(totalSeconds%86400/3600);const minutes=Math.floor(totalSeconds%3600/60);const seconds=totalSeconds%60;const clock=[hours,minutes,seconds].map(value=>String(value).padStart(2,"0")).join(":");return days?`${days}d ${clock}`:clock;}
+function updateSidebarClock(roomOpenedAt){const now=new Date();$("sidebarTime").textContent=new Intl.DateTimeFormat(undefined,{hour:"2-digit",minute:"2-digit",second:"2-digit"}).format(now);$("sidebarTime").dateTime=now.toISOString();$("sidebarDate").textContent=new Intl.DateTimeFormat(undefined,{weekday:"short",month:"short",day:"numeric",year:"numeric"}).format(now);$("roomDuration").textContent=Number.isFinite(roomOpenedAt)?formatRoomDuration(now.getTime()-roomOpenedAt):"Waiting for listeners";}
+function startSidebarClock(roomOpenedAt){if(sidebarClockInterval)clearInterval(sidebarClockInterval);updateSidebarClock(roomOpenedAt);sidebarClockInterval=setInterval(()=>updateSidebarClock(roomOpenedAt),1000);}
+function setAudioFocus(enabled){const card=$("playerCard");const button=$("audioFocusBtn");const note=$("audioFocusNote");if(!card||!button||!note)return;card.classList.toggle("audio-focus",enabled);button.setAttribute("aria-pressed",String(enabled));note.hidden=!enabled;}
+document.querySelectorAll(".sidebar-link").forEach(link=>link.addEventListener("click",()=>{document.querySelectorAll(".sidebar-link").forEach(item=>item.removeAttribute("aria-current"));link.setAttribute("aria-current","location");}));
+const audioFocusBtn=$("audioFocusBtn");
+if(audioFocusBtn){setAudioFocus(localStorage.getItem("synctune_audio_focus")==="true");audioFocusBtn.addEventListener("click",()=>{const enabled=!$("playerCard").classList.contains("audio-focus");localStorage.setItem("synctune_audio_focus",String(enabled));setAudioFocus(enabled);});}
 function applyTheme(){const light=localStorage.getItem("synctune_theme")==="night-light";document.body.classList.toggle("night-light",light);if($("themeBtn"))$("themeBtn").textContent=light?"☀ Dark Mode":"☾ Night Light";}
-function showApp(username,isAdmin){$("loginView").classList.add("hidden");$("appView").classList.remove("hidden");$("currentUser").textContent=username;$("welcomeName").textContent=username;const adminCard=$("adminCard");if(adminCard)adminCard.classList.toggle("hidden",!isAdmin);if(isAdmin)loadUsers();connectSocket();applyTheme();if(window.SyncTuneDots)window.SyncTuneDots.start();}
+function showApp(username,isAdmin){$("loginView").classList.add("hidden");$("appView").classList.remove("hidden");$("currentUser").textContent=username;$("welcomeName").textContent=username;$("sidebarUsername").textContent=username;const adminCard=$("adminCard");if(adminCard)adminCard.classList.toggle("hidden",!isAdmin);if(isAdmin)loadUsers();connectSocket();applyTheme();if(window.SyncTuneDots)window.SyncTuneDots.start();}
 function logout(){localStorage.removeItem("synctune_token");if(socket)socket.disconnect();location.reload();}
 async function api(url,options={}){const res=await fetch(url,{...options,headers:{"Content-Type":"application/json",...(options.headers||{}),...(token?{Authorization:`Bearer ${token}`}:{})}});const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data.error||"Request failed");return data;}
 $("loginForm").addEventListener("submit",async e=>{e.preventDefault();$("loginError").textContent="";try{const data=await api("/api/login",{method:"POST",body:JSON.stringify({username:$("username").value,password:$("password").value})});token=data.token;localStorage.setItem("synctune_token",token);showApp(data.username,data.isAdmin);}catch(err){$("loginError").textContent=err.message;}});
@@ -17,10 +25,41 @@ $("themeBtn").onclick=()=>{const light=!document.body.classList.contains("night-
 const adminForm=$("adminForm");
 if(adminForm)adminForm.addEventListener("submit",async e=>{e.preventDefault();const message=$("adminMessage");message.textContent="";message.classList.remove("error");try{const result=await api("/api/admin/users",{method:"POST",body:JSON.stringify({username:$("newUsername").value,password:$("newPassword").value})});message.textContent=result.message||"User created successfully.";$("newUsername").value="";$("newPassword").value="";loadUsers();}catch(err){message.textContent=err.message;message.classList.add("error");}});
 async function loadUsers(){const list=$("userList");if(!list)return;try{const data=await api("/api/admin/users");list.innerHTML="";const friends=data.users.filter(user=>!user.is_admin);$("totalUsers").textContent=data.users.length;$("friendUsers").textContent=friends.length;if(!data.users.length){list.innerHTML='<div class="queue-empty">No accounts found</div>';return;}data.users.forEach(user=>{const row=document.createElement("div");row.className="user-row";row.innerHTML=`<div><strong>${escapeHtml(user.username)}</strong><span>${user.is_admin?"Administrator":"Friend account • Created ${formatDate(user.created_at)}"}</span></div>${user.is_admin?"<span class=\"admin-badge\">Protected</span>":`<div class="user-actions"><button class="small-btn" data-password="${user.id}">Password</button><button class="small-btn danger" data-delete="${user.id}">Delete</button></div>`}`;list.appendChild(row);});list.querySelectorAll("[data-delete]").forEach(btn=>btn.onclick=async()=>{if(!confirm("Delete this user?"))return;try{await api(`/api/admin/users/${btn.dataset.delete}`,{method:"DELETE"});loadUsers();}catch(err){alert(err.message);}});list.querySelectorAll("[data-password]").forEach(btn=>btn.onclick=async()=>{const password=prompt("Enter the new password:");if(password===null)return;try{await api(`/api/admin/users/${btn.dataset.password}/password`,{method:"PUT",body:JSON.stringify({password})});alert("Password updated.");}catch(err){alert(err.message);}});}catch(err){list.innerHTML=`<p class="error">${escapeHtml(err.message)}</p>`;}}
+async function downloadAdminExport(format){
+  const message=$("exportMessage");
+  const buttons=[$("exportCsvBtn"),$("exportPdfBtn")].filter(Boolean);
+  message.textContent="";
+  message.classList.remove("error");
+  buttons.forEach(button=>button.disabled=true);
+  try{
+    const response=await fetch(`/api/admin/exports/database.${format}`,{headers:token?{Authorization:`Bearer ${token}`}:{},cache:"no-store"});
+    if(!response.ok){
+      const data=await response.json().catch(()=>({}));
+      throw new Error(data.error||`Export failed (${response.status})`);
+    }
+    const blob=await response.blob();
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement("a");
+    link.href=url;
+    link.download=`synctune-database-export.${format}`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+    message.textContent=`${format.toUpperCase()} export downloaded.`;
+  }catch(error){
+    message.textContent=error instanceof Error?error.message:"Unable to download the export.";
+    message.classList.add("error");
+  }finally{
+    buttons.forEach(button=>button.disabled=false);
+  }
+}
+if($("exportCsvBtn"))$("exportCsvBtn").addEventListener("click",()=>downloadAdminExport("csv"));
+if($("exportPdfBtn"))$("exportPdfBtn").addEventListener("click",()=>downloadAdminExport("pdf"));
 function formatDate(value){const date=new Date(String(value).replace(" ","T")+"Z");return Number.isNaN(date.getTime())?value:date.toLocaleDateString();}
 function escapeHtml(value){return String(value).replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[c]));}
-async function init(){applyTheme();try{const config=await fetch("/api/config").then(r=>r.json());$("roomName").textContent=config.roomName;}catch{}if(token){try{const me=await api("/api/me");showApp(me.username,me.isAdmin);}catch{localStorage.removeItem("synctune_token");token=null;}}}
-function connectSocket(){if(socket){socket.disconnect();socket=null;}socket=io({auth:{token},transports:["websocket","polling"],reconnection:true,reconnectionAttempts:Infinity,reconnectionDelay:250,reconnectionDelayMax:1500});socket.on("connect",()=>{$("status").textContent="Connected • synchronized room";socket.emit("requestSync");});socket.on("connect_error",()=>{$("status").textContent="Connection failed. Reconnecting...";});socket.on("presence",data=>{$("presence").textContent=`${data.count} online`;});socket.on("errorMessage",msg=>{$("songError").textContent=msg;$("queueError").textContent=msg;});socket.on("state",state=>applyState(state));socket.on("chatHistory",renderChat);socket.on("chatMessage",appendChatMessage);}
+async function init(){applyTheme();try{const response=await fetch("/api/config");if(!response.ok)throw new Error(`Room configuration request failed (${response.status})`);const config=await response.json();$("roomName").textContent=config.roomName;const roomOpenedAt=config.roomOpenedAt===null?null:Number(config.roomOpenedAt);startSidebarClock(Number.isFinite(roomOpenedAt)&&roomOpenedAt>0?roomOpenedAt:null);}catch(error){$("roomDuration").textContent="Unavailable";startSidebarClock(null);console.error("Unable to load room configuration",error);}if(token){try{const me=await api("/api/me");showApp(me.username,me.isAdmin);}catch{localStorage.removeItem("synctune_token");token=null;}}}
+function connectSocket(){if(socket){socket.disconnect();socket=null;}socket=io({auth:{token},transports:["websocket","polling"],reconnection:true,reconnectionAttempts:Infinity,reconnectionDelay:250,reconnectionDelayMax:1500});socket.on("connect",()=>{$("status").textContent="Connected • synchronized room";socket.emit("requestSync");});socket.on("connect_error",()=>{$("status").textContent="Connection failed. Reconnecting...";});socket.on("presence",data=>{$("presence").textContent=`${data.count} online`;});socket.on("roomStatus",data=>{const roomOpenedAt=data.roomOpenedAt===null?null:Number(data.roomOpenedAt);startSidebarClock(Number.isFinite(roomOpenedAt)&&roomOpenedAt>0?roomOpenedAt:null);});socket.on("errorMessage",msg=>{$("songError").textContent=msg;$("queueError").textContent=msg;});socket.on("state",state=>applyState(state));socket.on("chatHistory",renderChat);socket.on("chatMessage",appendChatMessage);}
 function updateMediaSession(state){if(!("mediaSession" in navigator))return;navigator.mediaSession.metadata=new MediaMetadata({title:state.videoId?"Shared YouTube track":"SyncTune",artist:state.changedBy?`Shared by ${state.changedBy}`:"Synchronized music",album:"SyncTune room"});navigator.mediaSession.playbackState=state.playing?"playing":"paused";}
 function renderChat(messages){const list=$("chatList");if(!list)return;list.innerHTML="";if(!messages.length){list.innerHTML='<div class="queue-empty">No messages yet</div>';return;}messages.forEach(appendChatMessage);}
 function appendChatMessage(message){const list=$("chatList");if(!list)return;const empty=list.querySelector(".queue-empty");if(empty)empty.remove();const row=document.createElement("div");row.className="chat-message";row.innerHTML=`<strong>${escapeHtml(message.username)}</strong><span>${escapeHtml(message.message)}</span>`;list.appendChild(row);list.scrollTop=list.scrollHeight;}
