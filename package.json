@@ -1,8 +1,8 @@
 {
-  "name": "synctune",
+  "name": "securesphere",
   "version": "1.0.0",
   "private": true,
-  "description": "Private synchronized YouTube music room with login and real-time playback sync",
+  "description": "SecureSphere - A Real Time Secure Communication with a private Friends Room",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

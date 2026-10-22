@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
-   SyncTune — Dot Particle Title
+  SecureSphere - Dot Particle Title
    Particles launch from the four corners of the viewport and
    assemble into "Listen together." above the hero. One orchestrated
    entrance, then a quiet breathing idle and a single light sweep.
@@ -304,5 +304,5 @@
     build();
   }
 
-  window.SyncTuneDots = { start, replay };
+  window.SecureSphereDots = { start, replay };
 })();

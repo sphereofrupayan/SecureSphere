@@ -1,8 +1,8 @@
-# SyncTune
+# SecureSphere - A Real Time Secure Communication
 
 **A private listening room where friends share one live music timeline.**
 
-SyncTune is a real-time networking project built around synchronized YouTube playback, a collaborative queue, room presence, and live chat.
+SecureSphere includes the **Friends Room**, a real-time networking space built around synchronized YouTube playback, a collaborative queue, room presence, and live chat.
 
 ## Features
 
@@ -38,7 +38,7 @@ Each authenticated browser connects to the Node.js room server over Socket.IO. T
 
 ```mermaid
 flowchart LR
-    A[Listener browser] <-->|Socket.IO events| S[SyncTune server]
+    A[Listener browser] <-->|Socket.IO events| S[SecureSphere server]
     B[Listener browser] <-->|Socket.IO events| S
     S -->|Shared playback and queue state| A
     S -->|Shared playback and queue state| B
@@ -91,4 +91,4 @@ The application can run as a Render Web Service:
 - Configure the environment variables listed above.
 - Attach persistent storage for the `data/` directory to retain accounts and chat history across deploys.
 
-SyncTune uses the official YouTube IFrame Player API. Browser autoplay policies may require each listener to interact with the player before audio can start.
+SecureSphere uses the official YouTube IFrame Player API. Browser autoplay policies may require each listener to interact with the player before audio can start.

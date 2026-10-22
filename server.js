@@ -60,7 +60,7 @@ function exportRecords() {
 }
 function pdfText(value) { return String(value ?? "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x20-\x7e]/g, "?"); }
 function addPdfHeading(doc, title) {
-  doc.font("Helvetica-Bold").fontSize(18).text("SyncTune database export");
+  doc.font("Helvetica-Bold").fontSize(18).text("SecureSphere database export");
   doc.moveDown(0.25).font("Helvetica").fontSize(9).fillColor("#666666").text(`Generated ${new Date().toISOString()} - ${title}`);
   doc.moveDown(1).fillColor("#111111");
 }
@@ -94,7 +94,7 @@ app.get("/api/admin/exports/database.csv",requireAdmin,(req,res)=>{
       ...messages.map(message => [message.id, message.username, message.message, message.created_at])
     ];
     const csv = `\uFEFF${rows.map(row => row.map(csvCell).join(",")).join("\r\n")}`;
-    res.set({ "Cache-Control": "no-store", "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": 'attachment; filename="synctune-database-export.csv"' });
+    res.set({ "Cache-Control": "no-store", "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": 'attachment; filename="securesphere-database-export.csv"' });
     res.send(csv);
   } catch (error) {
     console.error("Unable to create database CSV export", error);
@@ -105,7 +105,7 @@ app.get("/api/admin/exports/database.pdf",requireAdmin,(req,res)=>{
   let doc;
   try {
     const { users, messages } = exportRecords();
-    res.set({ "Cache-Control": "no-store", "Content-Type": "application/pdf", "Content-Disposition": 'attachment; filename="synctune-database-export.pdf"' });
+    res.set({ "Cache-Control": "no-store", "Content-Type": "application/pdf", "Content-Disposition": 'attachment; filename="securesphere-database-export.pdf"' });
     doc = new PDFDocument({ margin: 48 });
     doc.on("error", error => {
       console.error("Unable to stream database PDF export", error);
@@ -165,4 +165,4 @@ io.on("connection",socket=>{socket.join("main");if(!socket.user.isAdmin){socket.
  socket.on("disconnect",()=>{io.to("main").emit("presence",{count:io.sockets.adapter.rooms.get("main")?.size||0});if(!socket.user.isAdmin&&(io.sockets.adapter.rooms.get("listeners")?.size||0)===0){roomOpenedAt=null;io.to("main").emit("roomStatus",{roomOpenedAt});}});
 });
 app.get("/{*splat}",(req,res)=>res.sendFile(path.join(__dirname,"public","index.html")));
-server.listen(PORT,"0.0.0.0",()=>console.log(`SyncTune running on port ${PORT}`));
+server.listen(PORT,"0.0.0.0",()=>console.log(`SecureSphere running on port ${PORT}`));
